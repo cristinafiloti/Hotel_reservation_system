@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Grand Élysée{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #c9a84c;
+      --gold-light: #e8cc7a;
+      --gold-dark: #8a6e2f;
+      --black: #0c0c0c;
+      --charcoal: #1a1a1a;
+      --dark: #242424;
+      --mid: #3a3a3a;
+      --muted: #7a7a7a;
+      --light: #f5f0e8;
+      --white: #fdfbf7;
+      --error: #c0392b;
+      --success: #27ae60;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Jost', sans-serif;
+      background: var(--black);
+      color: var(--light);
+      min-height: 100vh;
+      font-weight: 300;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── NAV ─────────────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 3rem;
+      background: rgba(12,12,12,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(201,168,76,0.2);
+    }
+
+    .nav-brand {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      color: var(--gold);
+      text-decoration: none;
+    }
+    .nav-brand span { color: var(--white); }
+
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      transition: color .3s;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--gold); }
+
+    /* ── PAGE WRAPPER ─────────────────────────────────────────────── */
+    main { padding-top: 80px; min-height: 100vh; }
+
+    /* ── BUTTONS ──────────────────────────────────────────────────── */
+    .btn {
+      display: inline-block;
+      padding: .65rem 1.8rem;
+      font-family: 'Jost', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all .3s;
+      text-decoration: none;
+    }
+    .btn-gold {
+      background: var(--gold);
+      color: var(--black);
+    }
+    .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+    }
+    .btn-outline:hover { background: var(--gold); color: var(--black); }
+    .btn-danger {
+      background: transparent;
+      border: 1px solid var(--error);
+      color: var(--error);
+    }
+    .btn-danger:hover { background: var(--error); color: #fff; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ── CARDS ────────────────────────────────────────────────────── */
+    .card {
+      background: var(--charcoal);
+      border: 1px solid var(--mid);
+      padding: 2rem;
+    }
+    .card:hover { border-color: rgba(201,168,76,0.3); }
+
+    /* ── FORM ELEMENTS ────────────────────────────────────────────── */
+    .form-group { margin-bottom: 1.2rem; }
+    label {
+      display: block;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .4rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: .7rem 1rem;
+      background: var(--dark);
+      border: 1px solid var(--mid);
+      color: var(--light);
+      font-family: 'Jost', sans-serif;
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .3s;
+    }
+    input:focus, select:focus { border-color: var(--gold); }
+    select option { background: var(--dark); }
+
+    /* ── GOLD RULE ────────────────────────────────────────────────── */
+    .gold-rule {
+      width: 60px; height: 1px;
+      background: var(--gold);
+      margin: 1rem 0;
+    }
+
+    /* ── BADGE ────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: .25rem .8rem;
+      font-size: .65rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .badge-available { background: rgba(39,174,96,.15); color: #2ecc71; border: 1px solid rgba(39,174,96,.3); }
+    .badge-reserved  { background: rgba(201,168,76,.15); color: var(--gold); border: 1px solid rgba(201,168,76,.3); }
+    .badge-confirmed { background: rgba(39,174,96,.15); color: #2ecc71; border: 1px solid rgba(39,174,96,.3); }
+    .badge-cancelled { background: rgba(192,57,43,.15); color: #e74c3c; border: 1px solid rgba(192,57,43,.3); }
+    .badge-single    { background: rgba(52,152,219,.12); color: #74b9ff; border: 1px solid rgba(52,152,219,.3); }
+    .badge-double    { background: rgba(155,89,182,.12); color: #b19cd9; border: 1px solid rgba(155,89,182,.3); }
+    .badge-suite     { background: rgba(201,168,76,.15); color: var(--gold); border: 1px solid rgba(201,168,76,.3); }
+
+    /* ── TOAST ────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      padding: 1rem 1.5rem;
+      font-size: .85rem;
+      opacity: 0;
+      transition: opacity .4s;
+      z-index: 9999;
+      min-width: 260px;
+    }
+    #toast.show { opacity: 1; }
+    #toast.success { background: rgba(39,174,96,.9); color: #fff; }
+    #toast.error   { background: rgba(192,57,43,.9); color: #fff; }
+
+    /* ── SECTION HEADER ───────────────────────────────────────────── */
+    .section-header { margin-bottom: 2.5rem; }
+    .section-label {
+      font-size: .65rem; letter-spacing: .3em;
+      text-transform: uppercase; color: var(--gold); margin-bottom: .5rem;
+    }
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.8rem; font-weight: 300; color: var(--white);
+      line-height: 1.1;
+    }
+
+    /* ── MODAL ────────────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.85); z-index: 2000;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--charcoal);
+      border: 1px solid var(--mid);
+      width: min(620px, 95vw);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--mid);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem; font-weight: 400;
+    }
+    .modal-close {
+      background: none; border: none; color: var(--muted);
+      font-size: 1.4rem; cursor: pointer; line-height: 1;
+    }
+    .modal-close:hover { color: var(--white); }
+    .modal-body { padding: 2rem; }
+    .modal-footer {
+      padding: 1.2rem 2rem;
+      border-top: 1px solid var(--mid);
+      display: flex; gap: 1rem; justify-content: flex-end;
+    }
+
+    /* ── TABS ─────────────────────────────────────────────────────── */
+    .tab-bar {
+      display: flex; gap: 0;
+      border-bottom: 1px solid var(--mid);
+      margin-bottom: 2rem;
+    }
+    .tab-btn {
+      padding: .8rem 1.6rem;
+      background: none; border: none;
+      color: var(--muted); font-family: 'Jost', sans-serif;
+      font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: all .3s;
+    }
+    .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* ── LOADING ──────────────────────────────────────────────────── */
+    .loader {
+      display: flex; align-items: center; justify-content: center;
+      padding: 4rem; color: var(--muted);
+      font-size: .8rem; letter-spacing: .2em;
+    }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--mid); border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin .7s linear infinite; margin-right: 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESPONSIVE ───────────────────────────────────────────────── */
+    @media(max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { gap: 1.2rem; }
+      .nav-links a { font-size: .62rem; }
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="/"><span>Grand</span> Élysée</a>
+  <ul class="nav-links">
+    <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a></li>
+    <li><a href="/rooms" class="{% if request.path == '/rooms' %}active{% endif %}">Rooms</a></li>
+    <li><a href="/reservations" class="{% if request.path == '/reservations' %}active{% endif %}">My Reservations</a></li>
+    <li><a href="/admin" class="{% if request.path == '/admin' %}active{% endif %}">Admin</a></li>
+  </ul>
+</nav>
+
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<div id="toast"></div>
+
+<script>
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  setTimeout(() => t.className = '', 3200);
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function fmt(n) { return `€${Number(n).toFixed(2)}`; }
+
+function badgeRoom(type) {
+  if (type === 'SingleRoom') return '<span class="badge badge-single">Single</span>';
+  if (type === 'DoubleRoom') return '<span class="badge badge-double">Double</span>';
+  return '<span class="badge badge-suite">Suite</span>';
+}
+function badgeStatus(s) {
+  return `<span class="badge badge-${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+}
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

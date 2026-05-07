@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block title %}Admin – Grand Élysée{% endblock %}
+
+{% block head %}
+<style>
+  .page-hero {
+    background: linear-gradient(160deg, #1a1510 0%, var(--black) 100%);
+    padding: 5rem 3rem 3rem;
+    border-bottom: 1px solid rgba(201,168,76,.15);
+  }
+  .admin-wrap { max-width: 1200px; margin: 0 auto; padding: 3rem 3rem 6rem; }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem; margin-bottom: 3rem;
+  }
+  .kpi-card {
+    background: var(--charcoal); border: 1px solid var(--mid);
+    padding: 1.8rem; position: relative; overflow: hidden;
+  }
+  .kpi-card::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .kpi-label { font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem; }
+  .kpi-value {
+    font-family:'Cormorant Garamond',serif;
+    font-size:2.2rem;color:var(--white);font-weight:300;
+  }
+  .kpi-value.gold { color: var(--gold); }
+  .kpi-sub { font-size:.72rem;color:var(--muted);margin-top:.3rem; }
+
+  /* Tables */
+  .admin-table-wrap {
+    background: var(--charcoal); border: 1px solid var(--mid);
+    margin-bottom: 2.5rem;
+  }
+  .admin-table-header {
+    padding: 1.2rem 1.8rem;
+    border-bottom: 1px solid var(--mid);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .admin-table-title {
+    font-family:'Cormorant Garamond',serif;
+    font-size:1.3rem;color:var(--gold);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--mid); }
+  th {
+    padding: .8rem 1.5rem; text-align:left;
+    font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    font-weight: 400;
+  }
+  td { padding: .9rem 1.5rem; font-size:.85rem; border-bottom:1px solid rgba(255,255,255,.04); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* Room status toggle */
+  .status-toggle {
+    background: none; border: 1px solid var(--mid);
+    color: var(--muted); font-size:.65rem;letter-spacing:.1em;
+    padding:.25rem .7rem;cursor:pointer;transition:all .3s;font-family:'Jost',sans-serif;
+  }
+  .status-toggle:hover { border-color:var(--gold);color:var(--gold); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div style="max-width:1200px;margin:0 auto">
+    <p class="section-label">Administration</p>
+    <h1 class="section-title">Hotel Dashboard</h1>
+    <div class="gold-rule"></div>
+    <p style="color:var(--muted);font-size:.82rem;margin-top:.5rem">
+      {{ hotel.name }} · {{ hotel.address }}
+    </p>
+  </div>
+</div>
+
+<div class="admin-wrap">
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="loader"><div class="spinner"></div>Loading stats…</div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('rooms',this)">Rooms</button>
+    <button class="tab-btn" onclick="switchTab('reservations',this)">Reservations</button>
+    <button class="tab-btn" onclick="switchTab('services',this)">Services</button>
+  </div>
+
+  <!-- ROOMS TABLE -->
+  <div id="tab-rooms">
+    <div class="admin-table-wrap">
+      <div class="admin-table-header">
+        <span class="admin-table-title">Room Inventory</span>
+        <span id="room-counts" style="font-size:.78rem;color:var(--muted)"></span>
+      </div>
+      <div id="rooms-table-body">
+        <div class="loader"><div class="spinner"></div>Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESERVATIONS TABLE -->
+  <div id="tab-reservations" style="display:none">
+    <div class="admin-table-wrap">
+      <div class="admin-table-header">
+        <span class="admin-table-title">All Reservations</span>
+        <button class="btn btn-outline" style="font-size:.65rem;padding:.4rem 1rem" onclick="loadReservations()">Refresh</button>
+      </div>
+      <div id="reservations-table-body">
+        <div class="loader"><div class="spinner"></div>Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SERVICES TABLE -->
+  <div id="tab-services" style="display:none">
+    <div class="admin-table-wrap">
+      <div class="admin-table-header">
+        <span class="admin-table-title">Available Services</span>
+      </div>
+      <div id="services-table-body">
+        <div class="loader"><div class="spinner"></div>Loading…</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadStats() {
+  const res = await fetch('/api/admin/stats');
+  const s = await res.json();
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Total Rooms</div>
+      <div class="kpi-value">${s.rooms.total}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Available</div>
+      <div class="kpi-value" style="color:#2ecc71">${s.rooms.available}</div>
+      <div class="kpi-sub">${s.rooms.reserved} reserved</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Reservations</div>
+      <div class="kpi-value">${s.reservations.total}</div>
+      <div class="kpi-sub">${s.reservations.confirmed} confirmed · ${s.reservations.cancelled} cancelled</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Revenue</div>
+      <div class="kpi-value gold">${fmt(s.revenue)}</div>
+      <div class="kpi-sub">${s.invoices} invoice${s.invoices!==1?'s':''}</div>
+    </div>
+  `;
+}
+
+async function loadRooms() {
+  const res = await fetch('/api/rooms');
+  const data = await res.json();
+  const avail = data.rooms.filter(r=>r.status==='available').length;
+  document.getElementById('room-counts').textContent = `${avail} available · ${data.rooms.length - avail} reserved`;
+  document.getElementById('rooms-table-body').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Room #</th><th>Type</th><th>Capacity</th><th>Base Price</th><th>Amenities</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        ${data.rooms.map(r=>`
+          <tr>
+            <td style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--gold)">${r.number}</td>
+            <td>${badgeRoom(r.room_type)}</td>
+            <td>${r.capacity} guest${r.capacity>1?'s':''}</td>
+            <td style="color:var(--gold)">${fmt(r.base_price)}</td>
+            <td style="font-size:.75rem;color:var(--muted)">${r.amenities.slice(0,3).join(' · ')}</td>
+            <td>${badgeStatus(r.status)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function loadReservations() {
+  const res = await fetch('/api/reservations');
+  const data = await res.json();
+  if (!data.reservations.length) {
+    document.getElementById('reservations-table-body').innerHTML =
+      '<div style="padding:3rem;text-align:center;color:var(--muted)">No reservations yet.</div>';
+    return;
+  }
+  document.getElementById('reservations-table-body').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th><th>Guest</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>Nights</th><th>Total</th><th>Status</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${data.reservations.map(r=>`
+          <tr>
+            <td style="color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:1rem">${r.reservation_id}</td>
+            <td>${r.customer}</td>
+            <td>${r.room.number} ${badgeRoom(r.room.room_type)}</td>
+            <td>${r.check_in}</td>
+            <td>${r.check_out}</td>
+            <td>${r.nights}</td>
+            <td style="color:var(--gold)">${fmt(r.total_cost)}</td>
+            <td>${badgeStatus(r.status)}</td>
+            <td>
+              ${r.status==='confirmed' ? `
+                <button class="status-toggle" onclick="adminCancel(${r.reservation_id})">Cancel</button>
+              ` : ''}
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function loadServices() {
+  const res = await fetch('/api/services');
+  const data = await res.json();
+  document.getElementById('services-table-body').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th><th>Name</th><th>Type</th><th>Base Price</th><th>Details</th><th>Total Cost</th>
+      </tr></thead>
+      <tbody>
+        ${data.services.map(s=>`
+          <tr>
+            <td style="color:var(--muted)">${s.service_id}</td>
+            <td style="color:var(--white)">${s.name}</td>
+            <td><span class="badge badge-reserved">${s.type.replace('Service','')}</span></td>
+            <td>${fmt(s.price)}</td>
+            <td style="font-size:.75rem;color:var(--muted)">
+              ${s.duration ? `${s.duration}min · ${s.therapist}` : s.menu_item ? `${s.menu_item} × ${s.quantity}` : ''}
+            </td>
+            <td style="color:var(--gold)">${fmt(s.cost)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function adminCancel(id) {
+  if (!confirm(`Cancel reservation #${id}?`)) return;
+  const res = await fetch(`/api/reservations/${id}/cancel`, {method:'POST'});
+  const data = await res.json();
+  if (data.success) {
+    showToast('Reservation cancelled', 'success');
+    loadReservations(); loadStats();
+  } else { showToast(data.error,'error'); }
+}
+
+function switchTab(name, btn) {
+  ['rooms','reservations','services'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t===name ? '' : 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (name==='reservations') loadReservations();
+  if (name==='services') loadServices();
+}
+
+// Init
+loadStats();
+loadRooms();
+</script>
+{% endblock %}

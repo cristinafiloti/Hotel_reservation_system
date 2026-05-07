@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Rooms – Grand Élysée{% endblock %}
+
+{% block head %}
+<style>
+  .page-hero {
+    background: linear-gradient(160deg, #1a1510 0%, var(--black) 100%);
+    padding: 5rem 3rem 3rem;
+    border-bottom: 1px solid rgba(201,168,76,.15);
+  }
+  .page-hero-inner { max-width: 1100px; margin: 0 auto; }
+
+  .rooms-layout {
+    max-width: 1100px; margin: 0 auto;
+    padding: 3rem 3rem 6rem;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 3rem;
+  }
+  @media(max-width:768px) {
+    .rooms-layout { grid-template-columns: 1fr; }
+    .filters-panel { order: -1; }
+  }
+
+  /* Sidebar filters */
+  .filters-panel { position: sticky; top: 100px; height: fit-content; }
+  .filter-title {
+    font-size:.65rem;letter-spacing:.25em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:1.5rem;
+  }
+  .filter-section { margin-bottom: 2rem; }
+  .filter-label {
+    font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:.6rem;display:block;
+  }
+  .filter-checks { display:flex;flex-direction:column;gap:.5rem; }
+  .filter-check {
+    display:flex;align-items:center;gap:.7rem;
+    font-size:.82rem;cursor:pointer;
+  }
+  .filter-check input { width:auto;accent-color:var(--gold); }
+
+  /* Room list */
+  .room-list { display:flex;flex-direction:column;gap:1.5rem; }
+  .room-row {
+    background: var(--charcoal); border: 1px solid var(--mid);
+    display: grid; grid-template-columns: 1fr auto;
+    transition: border-color .3s;
+    overflow: hidden;
+  }
+  .room-row:hover { border-color: rgba(201,168,76,.35); }
+  .room-row-info { padding: 1.8rem; }
+  .room-row-header { display:flex;align-items:center;gap:1rem;margin-bottom:.8rem; }
+  .room-row-num {
+    font-family:'Cormorant Garamond',serif;
+    font-size:2.2rem;color:var(--gold);font-weight:300;
+  }
+  .room-row-name {
+    font-family:'Cormorant Garamond',serif;
+    font-size:1.4rem;color:var(--white);
+  }
+  .room-row-amenities { display:flex;flex-wrap:wrap;gap:.4rem;margin:.7rem 0 1rem; }
+  .room-row-price {
+    padding: 1.8rem;
+    border-left: 1px solid var(--mid);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    min-width: 160px; text-align:center;
+    background: var(--dark);
+  }
+  .price-big {
+    font-family:'Cormorant Garamond',serif;
+    font-size:2rem;color:var(--gold);font-weight:600;
+  }
+  .price-night { font-size:.65rem;color:var(--muted);letter-spacing:.1em;margin:.2rem 0 1rem; }
+  .capacity-tag {
+    font-size:.7rem;color:var(--muted);margin-bottom:.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <p class="section-label">Our Accommodations</p>
+    <h1 class="section-title">Rooms &amp; Suites</h1>
+    <div class="gold-rule"></div>
+    <p style="color:var(--muted);font-size:.88rem;max-width:480px;line-height:1.8;margin-top:.5rem">
+      From intimate single rooms to sprawling suites, every space is designed to exceed your expectations.
+    </p>
+  </div>
+</div>
+
+<div class="rooms-layout">
+  <!-- FILTERS -->
+  <aside class="filters-panel">
+    <p class="filter-title">✦ Filters</p>
+
+    <div class="filter-section">
+      <span class="filter-label">Room Type</span>
+      <div class="filter-checks">
+        <label class="filter-check"><input type="checkbox" value="SingleRoom" onchange="applyFilters()" checked> Single Room</label>
+        <label class="filter-check"><input type="checkbox" value="DoubleRoom" onchange="applyFilters()" checked> Double Room</label>
+        <label class="filter-check"><input type="checkbox" value="Suite" onchange="applyFilters()" checked> Suite</label>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <span class="filter-label">Status</span>
+      <div class="filter-checks">
+        <label class="filter-check"><input type="checkbox" value="available" onchange="applyFilters()" checked> Available</label>
+        <label class="filter-check"><input type="checkbox" value="reserved"  onchange="applyFilters()" checked> Reserved</label>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <span class="filter-label">Max Price / Night (€)</span>
+      <input type="range" id="price-range" min="50" max="500" value="500"
+             oninput="document.getElementById('price-val').textContent=this.value;applyFilters()"
+             style="width:100%;accent-color:var(--gold)">
+      <p style="font-size:.8rem;color:var(--gold);margin-top:.3rem">Up to €<span id="price-val">500</span></p>
+    </div>
+
+    <div style="margin-top:2rem">
+      <p style="font-size:.72rem;color:var(--muted)">
+        Showing <strong id="shown-count" style="color:var(--white)">—</strong> rooms
+      </p>
+    </div>
+  </aside>
+
+  <!-- ROOM LIST -->
+  <div>
+    <div id="room-list" class="room-list">
+      <div class="loader"><div class="spinner"></div>Loading rooms…</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allRooms = [];
+
+async function loadRooms() {
+  const res = await fetch('/api/rooms');
+  const data = await res.json();
+  allRooms = data.rooms;
+  applyFilters();
+}
+
+function applyFilters() {
+  const types = [...document.querySelectorAll('input[type=checkbox][value$="Room"],input[type=checkbox][value="Suite"]')]
+    .filter(c=>c.checked).map(c=>c.value);
+  const statuses = [...document.querySelectorAll('input[type=checkbox][value="available"],input[type=checkbox][value="reserved"]')]
+    .filter(c=>c.checked).map(c=>c.value);
+  const maxPrice = parseInt(document.getElementById('price-range').value);
+
+  const filtered = allRooms.filter(r =>
+    types.includes(r.room_type) &&
+    statuses.includes(r.status) &&
+    r.base_price <= maxPrice
+  );
+
+  document.getElementById('shown-count').textContent = filtered.length;
+  renderRooms(filtered);
+}
+
+function renderRooms(rooms) {
+  const el = document.getElementById('room-list');
+  if (!rooms.length) {
+    el.innerHTML = `<div style="text-align:center;padding:4rem;color:var(--muted)">
+      <div style="font-size:2rem;margin-bottom:1rem">🏨</div>
+      <p>No rooms match your filters.</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = rooms.map(r => `
+    <div class="room-row">
+      <div class="room-row-info">
+        <div class="room-row-header">
+          <span class="room-row-num">${r.number}</span>
+          <div>
+            <div class="room-row-name">${r.room_type.replace('Room',' Room')}</div>
+            <div style="margin-top:.3rem">${badgeRoom(r.room_type)} ${badgeStatus(r.status)}</div>
+          </div>
+        </div>
+        <div class="room-row-amenities">${r.amenities.map(a=>`<span class="amenity">${a}</span>`).join('')}</div>
+        <p style="font-size:.78rem;color:var(--muted)">Up to ${r.capacity} guest${r.capacity>1?'s':''}</p>
+      </div>
+      <div class="room-row-price">
+        <div class="price-big">${fmt(r.base_price)}</div>
+        <div class="price-night">per night</div>
+        <div class="capacity-tag">👤 ${r.capacity}</div>
+        ${r.status === 'available'
+          ? `<a href="/" class="btn btn-gold" style="font-size:.65rem;padding:.5rem 1rem">Book →</a>`
+          : `<span class="badge badge-reserved" style="margin-top:.3rem">Reserved</span>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+loadRooms();
+</script>
+{% endblock %}

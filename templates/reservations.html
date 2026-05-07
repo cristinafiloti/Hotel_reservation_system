@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}My Reservations – Grand Élysée{% endblock %}
+
+{% block head %}
+<style>
+  .page-hero {
+    background: linear-gradient(160deg, #1a1510 0%, var(--black) 100%);
+    padding: 5rem 3rem 3rem;
+    border-bottom: 1px solid rgba(201,168,76,.15);
+  }
+  .page-hero-inner { max-width: 1100px; margin: 0 auto; }
+
+  .reservations-wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 3rem 6rem; }
+
+  .lookup-bar {
+    display: flex; gap: 1rem; align-items: flex-end;
+    background: var(--charcoal); border: 1px solid var(--mid);
+    padding: 1.5rem; margin-bottom: 3rem;
+  }
+  .lookup-bar .form-group { flex: 1; margin-bottom: 0; }
+
+  .res-list { display: flex; flex-direction: column; gap: 1.5rem; }
+  .res-card {
+    background: var(--charcoal);
+    border: 1px solid var(--mid);
+    transition: border-color .3s;
+  }
+  .res-card-header {
+    padding: 1.5rem 2rem;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--mid);
+    cursor: pointer;
+  }
+  .res-card-header:hover .res-id { color: var(--gold-light); }
+  .res-id {
+    font-family:'Cormorant Garamond',serif;
+    font-size:1.6rem;color:var(--gold);transition:color .3s;
+  }
+  .res-summary { font-size:.8rem;color:var(--muted);margin-top:.2rem; }
+  .res-body { padding: 2rem; display:none; }
+  .res-body.open { display: block; }
+  .res-detail-grid {
+    display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+    gap: 1.5rem; margin-bottom: 1.5rem;
+  }
+  .detail-item {}
+  .detail-key { font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:.2rem; }
+  .detail-val { font-size:.95rem;color:var(--white); }
+  .detail-val.gold { color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:1.2rem; }
+
+  .services-list { margin: 1rem 0; }
+  .service-item {
+    display:flex;justify-content:space-between;
+    padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05);
+    font-size:.82rem;
+  }
+  .res-actions { display:flex;gap:1rem;margin-top:1.5rem; }
+
+  /* Invoice panel */
+  .invoice-panel {
+    background: var(--dark); border-left: 2px solid var(--gold);
+    padding: 1.2rem 1.5rem; margin-top: 1.5rem;
+  }
+  .invoice-title {
+    font-family:'Cormorant Garamond',serif;
+    font-size:1.2rem;color:var(--gold);margin-bottom:.8rem;
+  }
+
+  .empty-state { text-align:center;padding:6rem 2rem;color:var(--muted); }
+  .empty-icon { font-size:3rem;margin-bottom:1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <p class="section-label">Guest Portal</p>
+    <h1 class="section-title">My Reservations</h1>
+    <div class="gold-rule"></div>
+  </div>
+</div>
+
+<div class="reservations-wrap">
+  <!-- LOOKUP -->
+  <div class="lookup-bar">
+    <div class="form-group">
+      <label>Find Reservation by ID</label>
+      <input type="number" id="lookup-id" placeholder="e.g. 1" min="1" />
+    </div>
+    <button class="btn btn-outline" onclick="lookupReservation()">Look Up</button>
+    <button class="btn btn-gold" onclick="loadAll()">View All</button>
+  </div>
+
+  <!-- LIST -->
+  <div id="res-list" class="res-list">
+    <div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <p>Enter a reservation ID above or click <strong>View All</strong>.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadAll() {
+  document.getElementById('res-list').innerHTML = '<div class="loader"><div class="spinner"></div>Loading…</div>';
+  const res = await fetch('/api/reservations');
+  const data = await res.json();
+  renderReservations(data.reservations);
+}
+
+async function lookupReservation() {
+  const id = document.getElementById('lookup-id').value;
+  if (!id) { showToast('Enter a reservation ID','error'); return; }
+  const res = await fetch(`/api/reservations/${id}`);
+  if (!res.ok) { showToast('Reservation not found','error'); return; }
+  const data = await res.json();
+  renderReservations([data]);
+}
+
+function renderReservations(reservations) {
+  const el = document.getElementById('res-list');
+  if (!reservations.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🏨</div>
+      <p>No reservations found.</p>
+      <a href="/" class="btn btn-gold" style="margin-top:1.5rem">Book a Room</a>
+    </div>`;
+    return;
+  }
+  el.innerHTML = reservations.map(r => `
+    <div class="res-card" id="rc-${r.reservation_id}">
+      <div class="res-card-header" onclick="toggleRes(${r.reservation_id})">
+        <div>
+          <div class="res-id">Reservation #${r.reservation_id}</div>
+          <div class="res-summary">
+            ${r.room.number} · ${r.room.room_type.replace('Room',' Room')} ·
+            ${r.check_in} → ${r.check_out} · ${r.nights} night${r.nights>1?'s':''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem">
+          ${badgeStatus(r.status)}
+          <span style="color:var(--muted);font-size:.8rem">▾</span>
+        </div>
+      </div>
+      <div class="res-body" id="rb-${r.reservation_id}">
+        <div class="res-detail-grid">
+          <div class="detail-item">
+            <div class="detail-key">Guest</div>
+            <div class="detail-val">${r.customer}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-key">Room</div>
+            <div class="detail-val">${r.room.number} – ${r.room.room_type.replace('Room',' Room')}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-key">Check-in</div>
+            <div class="detail-val">${r.check_in}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-key">Check-out</div>
+            <div class="detail-val">${r.check_out}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-key">Nights</div>
+            <div class="detail-val">${r.nights}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-key">Total Cost</div>
+            <div class="detail-val gold">${fmt(r.total_cost)}</div>
+          </div>
+        </div>
+
+        ${r.services.length ? `
+          <p style="font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem">Included Services</p>
+          <div class="services-list">
+            ${r.services.map(s=>`
+              <div class="service-item">
+                <span>${s.name} <span style="color:var(--muted);font-size:.72rem">(${s.type.replace('Service','')})</span></span>
+                <span style="color:var(--gold)">${fmt(s.cost)}</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+
+        <div class="res-actions">
+          ${r.status === 'confirmed' ? `
+            <button class="btn btn-danger" onclick="cancelRes(${r.reservation_id})">Cancel Reservation</button>
+          ` : ''}
+          <button class="btn btn-outline" onclick="loadAll()">← Back to All</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleRes(id) {
+  const body = document.getElementById(`rb-${id}`);
+  body.classList.toggle('open');
+}
+
+async function cancelRes(id) {
+  if (!confirm('Are you sure you want to cancel this reservation?')) return;
+  const res = await fetch(`/api/reservations/${id}/cancel`, {method:'POST'});
+  const data = await res.json();
+  if (data.success) {
+    showToast('Reservation cancelled.', 'success');
+    loadAll();
+  } else {
+    showToast(data.error || 'Error cancelling.', 'error');
+  }
+}
+</script>
+{% endblock %}

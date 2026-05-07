@@ -1,0 +1,583 @@
+{% extends "base.html" %}
+{% block title %}Grand Élysée – Luxury Hotel Reservations{% endblock %}
+
+{% block head %}
+<style>
+  /* ── HERO ──────────────────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(201,168,76,.07) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(201,168,76,.05) 0%, transparent 50%),
+      linear-gradient(160deg, #0c0c0c 0%, #1a1510 50%, #0c0c0c 100%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(201,168,76,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,.04) 1px, transparent 1px);
+    background-size: 80px 80px;
+  }
+  .hero-content {
+    position: relative; z-index: 2;
+    max-width: 780px; padding: 0 2rem;
+  }
+  .hero-eyebrow {
+    font-size: .65rem; letter-spacing: .4em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 1.8rem;
+    animation: fadeUp .8s ease both;
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 300; color: var(--white);
+    line-height: 1.0; margin-bottom: 1.5rem;
+    animation: fadeUp .8s .15s ease both;
+  }
+  .hero-title em { font-style: italic; color: var(--gold); }
+  .hero-sub {
+    font-size: .9rem; color: var(--muted);
+    max-width: 440px; margin: 0 auto 2.5rem;
+    line-height: 1.8;
+    animation: fadeUp .8s .3s ease both;
+  }
+  .hero-ctas {
+    display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    animation: fadeUp .8s .45s ease both;
+  }
+
+  /* ── SEARCH PANEL ──────────────────────────────────────────────── */
+  .search-section {
+    padding: 0 3rem 5rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .search-card {
+    background: var(--charcoal);
+    border: 1px solid rgba(201,168,76,.25);
+    padding: 2.5rem;
+    margin-top: -60px;
+    position: relative; z-index: 10;
+  }
+  .search-card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem; font-weight: 400;
+    margin-bottom: 1.8rem; color: var(--gold);
+  }
+  .search-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem 1.5rem;
+    align-items: end;
+  }
+
+  /* ── RESULTS ───────────────────────────────────────────────────── */
+  .results-section {
+    padding: 0 3rem 6rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem; margin-top: 2rem;
+  }
+  .room-card {
+    background: var(--charcoal);
+    border: 1px solid var(--mid);
+    transition: all .35s; cursor: pointer; position: relative;
+    overflow: hidden;
+  }
+  .room-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0; transition: opacity .3s;
+  }
+  .room-card:hover { border-color: rgba(201,168,76,.4); transform: translateY(-3px); }
+  .room-card:hover::before { opacity: 1; }
+  .room-card-header {
+    padding: 1.8rem 1.8rem 1rem;
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .room-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem; color: var(--gold); font-weight: 300;
+  }
+  .room-body { padding: 0 1.8rem 1.5rem; }
+  .room-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem; color: var(--white); margin-bottom: .4rem;
+  }
+  .room-amenities { display: flex; flex-wrap: wrap; gap: .4rem; margin: .8rem 0 1rem; }
+  .amenity {
+    font-size: .6rem; letter-spacing: .1em;
+    padding: .2rem .55rem; border: 1px solid var(--mid); color: var(--muted);
+  }
+  .room-price { display: flex; align-items: baseline; gap: .5rem; }
+  .price-amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem; color: var(--gold); font-weight: 600;
+  }
+  .price-per { font-size: .7rem; color: var(--muted); letter-spacing: .1em; }
+  .room-footer {
+    padding: 1rem 1.8rem;
+    border-top: 1px solid var(--mid);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .capacity-info { font-size: .75rem; color: var(--muted); }
+
+  /* ── FEATURES ──────────────────────────────────────────────────── */
+  .features-section {
+    padding: 6rem 3rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 2rem; margin-top: 3rem;
+  }
+  .feature-card {
+    border-left: 1px solid rgba(201,168,76,.3);
+    padding: 1.5rem 1.5rem 1.5rem 2rem;
+  }
+  .feature-icon { font-size: 1.8rem; margin-bottom: 1rem; }
+  .feature-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem; color: var(--white); margin-bottom: .5rem;
+  }
+  .feature-desc { font-size: .82rem; color: var(--muted); line-height: 1.7; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── BOOKING MODAL ─────────────────────────────────────────────── */
+  .cost-breakdown {
+    background: var(--dark); padding: 1.2rem;
+    margin: 1.2rem 0; border-left: 2px solid var(--gold);
+  }
+  .cost-row {
+    display: flex; justify-content: space-between;
+    font-size: .85rem; padding: .3rem 0;
+  }
+  .cost-row.total {
+    border-top: 1px solid var(--mid); margin-top: .5rem;
+    padding-top: .8rem; font-weight: 500; color: var(--gold);
+    font-family: 'Cormorant Garamond', serif; font-size: 1.1rem;
+  }
+  .services-check { display: flex; flex-direction: column; gap: .5rem; }
+  .service-check-item {
+    display: flex; align-items: center; gap: .8rem;
+    font-size: .85rem; cursor: pointer;
+  }
+  .service-check-item input[type=checkbox] { width: auto; accent-color: var(--gold); }
+
+  /* payment tabs */
+  .pay-method { display: none; }
+  .pay-method.active { display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">Est. 1924 · Paris, France</p>
+    <h1 class="hero-title">Where Luxury<br>Becomes <em>Home</em></h1>
+    <p class="hero-sub">Experience unparalleled elegance at {{ hotel.name }}. Every stay, a story worth telling.</p>
+    <div class="hero-ctas">
+      <button class="btn btn-gold" onclick="document.querySelector('.search-card').scrollIntoView({behavior:'smooth'})">Reserve a Room</button>
+      <a href="/rooms" class="btn btn-outline">View All Rooms</a>
+    </div>
+  </div>
+</section>
+
+<!-- SEARCH PANEL -->
+<section class="search-section">
+  <div class="search-card">
+    <h2 class="search-card-title">✦ Find Your Perfect Stay</h2>
+    <div class="search-grid">
+      <div class="form-group">
+        <label>Check-in</label>
+        <input type="date" id="check_in" />
+      </div>
+      <div class="form-group">
+        <label>Check-out</label>
+        <input type="date" id="check_out" />
+      </div>
+      <div class="form-group">
+        <label>Guests</label>
+        <select id="capacity">
+          <option value="1">1 Guest</option>
+          <option value="2">2 Guests</option>
+          <option value="3">3 Guests</option>
+          <option value="4">4 Guests</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Room Type</label>
+        <select id="room_type">
+          <option value="all">All Types</option>
+          <option value="SingleRoom">Single</option>
+          <option value="DoubleRoom">Double</option>
+          <option value="Suite">Suite</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Max Price / Night (€)</label>
+        <input type="number" id="max_price" value="999" min="50" max="9999" />
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn btn-gold" style="width:100%" onclick="searchRooms()">Search</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="results-section">
+  <div id="results-header" style="display:none" class="section-header">
+    <p class="section-label">Available Rooms</p>
+    <h2 class="section-title" id="results-count-title">Rooms Found</h2>
+    <div class="gold-rule"></div>
+  </div>
+  <div id="results" class="results-grid"></div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section">
+  <div class="section-header">
+    <p class="section-label">Why Choose Us</p>
+    <h2 class="section-title">An Experience<br>Beyond the Ordinary</h2>
+    <div class="gold-rule"></div>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🛎</div>
+      <h3 class="feature-title">Concierge Service</h3>
+      <p class="feature-desc">24/7 dedicated concierge ready to craft the best experiences for every guest.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧖</div>
+      <h3 class="feature-title">Wellness & Spa</h3>
+      <p class="feature-desc">World-class treatments by certified therapists in our award-winning spa.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🍽</div>
+      <h3 class="feature-title">Fine Dining</h3>
+      <p class="feature-desc">Michelin-starred cuisine delivered to your room or enjoyed in our restaurant.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⭐</div>
+      <h3 class="feature-title">4.9
+         Star Rating</h3>
+      <p class="feature-desc">Consistently rated among Europe's finest luxury hotels for over a century.</p>
+    </div>
+  </div>
+</section>
+
+<!-- BOOKING MODAL -->
+<div class="modal-overlay" id="bookModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Reserve Your Room</span>
+      <button class="modal-close" onclick="closeModal('bookModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Guest Info -->
+      <p class="section-label" style="margin-bottom:1rem">Guest Information</p>
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="guest_name" placeholder="e.g. Alexandre Dupont" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="guest_email" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="guest_phone" placeholder="+33 6 00 00 00" />
+        </div>
+      </div>
+
+      <!-- Services -->
+      <p class="section-label" style="margin-bottom:.8rem">Add Services</p>
+      <div class="services-check" id="services-check-list">
+        <div class="loader"><div class="spinner"></div> Loading…</div>
+      </div>
+
+      <!-- Cost Breakdown -->
+      <div class="cost-breakdown" id="cost-breakdown" style="display:none">
+        <div class="cost-row"><span>Room Cost</span><span id="cb-room">—</span></div>
+        <div class="cost-row"><span>Services</span><span id="cb-svc">—</span></div>
+        <div class="cost-row total"><span>Total</span><span id="cb-total">—</span></div>
+      </div>
+
+      <!-- Payment -->
+      <p class="section-label" style="margin:.5rem 0 .8rem">Payment Method</p>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchPay('cc',this)">Credit Card</button>
+        <button class="tab-btn" onclick="switchPay('pp',this)">PayPal</button>
+        <button class="tab-btn" onclick="switchPay('bt',this)">Bank Transfer</button>
+      </div>
+
+      <div id="pay-cc" class="pay-method active">
+        <div class="form-group">
+          <label>Card Number</label>
+          <input type="text" id="card_number" placeholder="4242 4242 4242 4242" maxlength="16" />
+        </div>
+        <div class="form-group">
+          <label>Cardholder Name</label>
+          <input type="text" id="card_holder" placeholder="Name on card" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="form-group">
+            <label>Expiry</label>
+            <input type="text" id="card_expiry" placeholder="MM/YY" maxlength="5" />
+          </div>
+          <div class="form-group">
+            <label>CVV</label>
+            <input type="text" id="card_cvv" placeholder="123" maxlength="4" />
+          </div>
+        </div>
+      </div>
+
+      <div id="pay-pp" class="pay-method">
+        <div class="form-group">
+          <label>PayPal Email</label>
+          <input type="email" id="paypal_email" placeholder="you@paypal.com" />
+        </div>
+      </div>
+
+      <div id="pay-bt" class="pay-method">
+        <div class="form-group">
+          <label>IBAN</label>
+          <input type="text" id="bank_iban" placeholder="DE89 3704 0044 0532 0130 00" />
+        </div>
+        <div class="form-group">
+          <label>Bank Name</label>
+          <input type="text" id="bank_name" placeholder="Deutsche Bank" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('bookModal')">Cancel</button>
+      <button class="btn btn-gold" id="confirm-btn" onclick="confirmBooking()">Confirm & Pay</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE MODAL -->
+<div class="modal-overlay" id="invoiceModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✦ Booking Confirmed</span>
+      <button class="modal-close" onclick="closeModal('invoiceModal')">✕</button>
+    </div>
+    <div class="modal-body" id="invoice-body"></div>
+    <div class="modal-footer">
+      <a href="/reservations" class="btn btn-gold">View My Reservations</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Set default dates
+const today = new Date();
+const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
+const d3 = new Date(today); d3.setDate(today.getDate()+3);
+document.getElementById('check_in').value  = tomorrow.toISOString().split('T')[0];
+document.getElementById('check_out').value = d3.toISOString().split('T')[0];
+
+let currentRoom = null, currentCheckIn = null, currentCheckOut = null;
+let allServices = [], payMethod = 'cc';
+
+// Load services for modal
+async function loadServices() {
+  const res = await fetch('/api/services');
+  const data = await res.json();
+  allServices = data.services;
+  const el = document.getElementById('services-check-list');
+  el.innerHTML = allServices.map(s => `
+    <label class="service-check-item">
+      <input type="checkbox" value="${s.service_id}" data-cost="${s.cost}" onchange="updateCost()">
+      <span>${s.name} <span style="color:var(--gold)">${fmt(s.cost)}</span>
+        <span style="color:var(--muted);font-size:.72rem"> · ${s.type.replace('Service','')}</span>
+      </span>
+    </label>
+  `).join('');
+}
+loadServices();
+
+function switchPay(method, btn) {
+  payMethod = method;
+  document.querySelectorAll('.pay-method').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('pay-'+method).classList.add('active');
+  btn.classList.add('active');
+}
+
+function updateCost() {
+  if (!currentRoom) return;
+  const ci = new Date(currentCheckIn), co = new Date(currentCheckOut);
+  const nights = Math.max(1, (co - ci) / 86400000);
+  const roomCost = currentRoom.price_for_stay;
+  let svcCost = 0;
+  document.querySelectorAll('#services-check-list input:checked').forEach(cb => {
+    svcCost += parseFloat(cb.dataset.cost);
+  });
+  document.getElementById('cb-room').textContent = fmt(roomCost);
+  document.getElementById('cb-svc').textContent  = fmt(svcCost);
+  document.getElementById('cb-total').textContent = fmt(roomCost + svcCost);
+  document.getElementById('cost-breakdown').style.display = 'block';
+}
+
+async function searchRooms() {
+  const check_in  = document.getElementById('check_in').value;
+  const check_out = document.getElementById('check_out').value;
+  const capacity  = document.getElementById('capacity').value;
+  const max_price = document.getElementById('max_price').value;
+  const room_type = document.getElementById('room_type').value;
+
+  document.getElementById('results').innerHTML = '<div class="loader"><div class="spinner"></div> Searching available rooms…</div>';
+  document.getElementById('results-header').style.display = 'block';
+
+  const res = await fetch('/api/rooms/search', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({check_in, check_out, capacity, max_price, room_type})
+  });
+  const data = await res.json();
+
+  document.getElementById('results-count-title').textContent =
+    data.total === 0 ? 'No Rooms Found' : `${data.total} Room${data.total>1?'s':''} Available`;
+
+  if (data.rooms.length === 0) {
+    document.getElementById('results').innerHTML = `
+      <div style="text-align:center;padding:4rem;color:var(--muted);grid-column:1/-1">
+        <div style="font-size:2rem;margin-bottom:1rem">🏨</div>
+        <p>No rooms match your criteria. Try adjusting your dates or filters.</p>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('results').innerHTML = data.rooms.map(r => `
+    <div class="room-card" onclick="openBooking(${JSON.stringify(r).replace(/"/g,'&quot;')}, '${check_in}','${check_out}')">
+      <div class="room-card-header">
+        <span class="room-number">${r.number}</span>
+        ${badgeRoom(r.room_type)}
+      </div>
+      <div class="room-body">
+        <h3 class="room-name">${r.room_type.replace('Room',' Room')}</h3>
+        <p style="font-size:.78rem;color:var(--muted)">${r.capacity} guest${r.capacity>1?'s':''} · ${(data.rooms.find(x=>x.room_id===r.room_id)?.nights||1)} night${1>1?'s':''}</p>
+        <div class="room-amenities">${r.amenities.map(a=>`<span class="amenity">${a}</span>`).join('')}</div>
+        <div class="room-price">
+          <span class="price-amount">${fmt(r.price_for_stay)}</span>
+          <span class="price-per">total stay</span>
+        </div>
+      </div>
+      <div class="room-footer">
+        <span class="capacity-info">Up to ${r.capacity} guest${r.capacity>1?'s':''}</span>
+        <button class="btn btn-gold" style="padding:.5rem 1.2rem;font-size:.65rem">Book Now →</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openBooking(room, checkIn, checkOut) {
+  currentRoom = room; currentCheckIn = checkIn; currentCheckOut = checkOut;
+  document.getElementById('check_in').value  = checkIn;
+  document.getElementById('check_out').value = checkOut;
+  // Reset checkboxes
+  document.querySelectorAll('#services-check-list input').forEach(cb => cb.checked = false);
+  updateCost();
+  openModal('bookModal');
+}
+
+async function confirmBooking() {
+  const btn = document.getElementById('confirm-btn');
+  btn.disabled = true; btn.textContent = 'Processing…';
+
+  const selectedSvcs = [...document.querySelectorAll('#services-check-list input:checked')].map(c=>c.value);
+
+  // Make reservation
+  const resResp = await fetch('/api/reservations', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      room_id: currentRoom.room_id,
+      check_in: currentCheckIn,
+      check_out: currentCheckOut,
+      guest_name:  document.getElementById('guest_name').value || 'Guest',
+      guest_email: document.getElementById('guest_email').value || 'guest@example.com',
+      guest_phone: document.getElementById('guest_phone').value,
+      service_ids: selectedSvcs,
+    })
+  });
+  const resData = await resResp.json();
+  if (!resData.success) {
+    showToast(resData.error || 'Booking failed', 'error');
+    btn.disabled = false; btn.textContent = 'Confirm & Pay';
+    return;
+  }
+
+  // Payment payload
+  const payPayload = {method: payMethod};
+  if (payMethod==='cc') {
+    payPayload.card_number  = document.getElementById('card_number').value||'4242424242424242';
+    payPayload.card_holder  = document.getElementById('card_holder').value||'Guest';
+    payPayload.expiry       = document.getElementById('card_expiry').value||'12/26';
+    payPayload.cvv          = document.getElementById('card_cvv').value||'123';
+  } else if (payMethod==='pp') {
+    payPayload.paypal_email = document.getElementById('paypal_email').value||'user@paypal.com';
+  } else {
+    payPayload.iban      = document.getElementById('bank_iban').value||'DE89370400440532013000';
+    payPayload.bank_name = document.getElementById('bank_name').value||'Bank';
+  }
+
+  // Process payment
+  const payResp = await fetch(`/api/reservations/${resData.reservation.reservation_id}/pay`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payPayload)
+  });
+  const payData = await payResp.json();
+
+  btn.disabled = false; btn.textContent = 'Confirm & Pay';
+  closeModal('bookModal');
+
+  // Show invoice
+  const inv = payData.invoice;
+  document.getElementById('invoice-body').innerHTML = `
+    <div style="text-align:center;margin-bottom:2rem">
+      <div style="font-size:2.5rem">🎉</div>
+      <p style="color:var(--gold);font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;margin-top:.5rem">Booking Confirmed</p>
+    </div>
+    <div class="cost-breakdown">
+      <div class="cost-row"><span>Invoice #</span><span>${inv.invoice_id}</span></div>
+      <div class="cost-row"><span>Room</span><span>${currentRoom.number} · ${currentRoom.room_type.replace('Room',' Room')}</span></div>
+      <div class="cost-row"><span>Check-in</span><span>${currentCheckIn}</span></div>
+      <div class="cost-row"><span>Check-out</span><span>${currentCheckOut}</span></div>
+      <div class="cost-row"><span>Payment</span><span>${inv.payment.type.replace('Payment','')}</span></div>
+      <div class="cost-row"><span>Status</span><span style="color:var(--success)">${inv.payment.status}</span></div>
+      <div class="cost-row total"><span>Total Paid</span><span>${fmt(inv.total_amount)}</span></div>
+    </div>
+  `;
+  openModal('invoiceModal');
+  showToast('Reservation confirmed!', 'success');
+}
+</script>
+{% endblock %}
